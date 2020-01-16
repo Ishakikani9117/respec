@@ -139,9 +139,14 @@ function getRequestEntry(elem) {
   let dataciteElem = elem.closest("[data-cite]");
   while (dataciteElem) {
     const cite = dataciteElem.dataset.cite.toLowerCase().replace(/[!?]/g, "");
-    const cites = cite.split(/\s+/).filter(s => s);
-    if (cites.length) {
-      specs.push(cites.sort());
+    const cites = cite.split(/\s+/);
+    // if we already have a spec in previous level of fallback chain, skip it
+    // from this level
+    const uniqueCites = [...new Set(cites)].filter(
+      spec => spec && !(specs[specs.length - 1] || []).includes(spec)
+    );
+    if (uniqueCites.length) {
+      specs.push(uniqueCites.sort());
     }
     if (dataciteElem === elem) break;
     dataciteElem = dataciteElem.parentElement.closest("[data-cite]");
@@ -154,9 +159,11 @@ function getRequestEntry(elem) {
       ? closestSection.querySelectorAll("a.bibref")
       : [];
     const inlineRefs = [...bibrefs].map(el => el.textContent.toLowerCase());
-    const uniqueInlineRefs = [...new Set(inlineRefs)].sort();
+    const uniqueInlineRefs = [...new Set(inlineRefs)].filter(
+      spec => spec && !(specs[specs.length - 1] || []).includes(spec)
+    );
     if (uniqueInlineRefs.length) {
-      specs.unshift(uniqueInlineRefs);
+      specs.unshift(uniqueInlineRefs.sort());
     }
   }
 
